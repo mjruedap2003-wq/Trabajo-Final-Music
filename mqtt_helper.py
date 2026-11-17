@@ -9,9 +9,17 @@ PORT = 1883
 TOPIC_CMD = "miguel_dj_2026/comando"
 TOPIC_TEL = "miguel_dj_2026/telemetria"
 
+def init_mqtt():
+    if "bpm_actual" not in st.session_state:
+        st.session_state.bpm_actual = 120
+    if "drops_count" not in st.session_state:
+        st.session_state.drops_count = 0
+    if "ultimo_evento" not in st.session_state:
+        st.session_state.ultimo_evento = "Esperando señal de la mesa..."
+
 def enviar_comando(comando: str):
+    init_mqtt()
     try:
-        # Envío directo y atómico: abre conexión, entrega el mensaje y cierra sin colgar Streamlit
         publish.single(
             topic=TOPIC_CMD,
             payload=comando,
@@ -24,13 +32,7 @@ def enviar_comando(comando: str):
         st.error(f"Error enviando orden MQTT: {e}")
 
 def sincronizar_telemetria():
-    if "bpm_actual" not in st.session_state:
-        st.session_state.bpm_actual = 120
-    if "drops_count" not in st.session_state:
-        st.session_state.drops_count = 0
-    if "ultimo_evento" not in st.session_state:
-        st.session_state.ultimo_evento = "Esperando señal de la mesa..."
-
+    init_mqtt()
     mensajes = []
 
     def on_connect(client, userdata, flags, rc):
@@ -46,7 +48,7 @@ def sincronizar_telemetria():
         client.on_message = on_message
         client.connect(BROKER, PORT, 30)
         client.loop_start()
-        time.sleep(0.4)  # Escucha breve para recoger mensajes retenidos o recientes
+        time.sleep(0.4)
         client.loop_stop()
         client.disconnect()
     except Exception:
