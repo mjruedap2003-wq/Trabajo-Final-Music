@@ -1,1 +1,6 @@
-
+streamlit
+paho-mqtt
+Pillow
+numpy
+SpeechRecognition
+streamlit-mic-recorder
