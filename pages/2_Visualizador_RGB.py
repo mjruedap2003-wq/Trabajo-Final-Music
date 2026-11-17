@@ -1,6 +1,6 @@
 import streamlit as st
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageOps
 from mqtt_helper import sincronizar_telemetria, enviar_comando
 from ui_dj import aplicar_estilo_dj, banner_dj
 
@@ -8,52 +8,83 @@ st.set_page_config(page_title="Visualizador RGB", page_icon="🖼️", layout="c
 aplicar_estilo_dj()
 sincronizar_telemetria()
 
-banner_dj("AMBIENTE 2 • ALBUM ART TO NEOPIXEL SYNC")
+banner_dj("AMBIENTE 2 • IMAGE-TO-SYNTH & PIXEL MAPPING")
 st.title("VISUALIZADOR RGB")
 
-st.markdown("Sube la portada de un álbum o cualquier imagen para extraer su color dominante y proyectarlo en los **16 LEDs NeoPixel** de Wokwi.")
+st.markdown("Convierte cualquier imagen o portada en **música y luces**: el sistema analiza su **temperatura de color** y **luminosidad** para componer un riff en el buzzer y mapear su paleta en los 16 NeoPixels.")
 
-archivo = st.file_uploader("📂 Sube una imagen (PNG, JPG, JPEG)", type=["png", "jpg", "jpeg"])
+archivo = st.file_uploader("📂 Sube una imagen o portada (PNG, JPG, JPEG)", type=["png", "jpg", "jpeg"])
 
 if archivo is not None:
     img = Image.open(archivo).convert("RGB")
     
-    # Calcular color dominante redimensionando a una muestra rápida
-    img_pequena = img.resize((50, 50))
-    arr = np.array(img_pequena).reshape(-1, 3)
+    # Si se disparó un Bass Drop en Wokwi, aplicar efecto visual "Invert/Solarize" en la web
+    if st.session_state.drops_count % 2 == 1:
+        img_mostrar = ImageOps.solarize(img, threshold=128)
+        efecto_txt = "⚡ REMIX VISUAL ACTIVO (Por Bass Drop en Wokwi)"
+    else:
+        img_mostrar = img
+        efecto_txt = "🎨 MODO ORIGINAL"
+
+    # Extraer 3 colores representativos dividiendo la imagen en tercios
+    img_small = img.resize((60, 60))
+    arr = np.array(img_small)
     
-    # Filtrar píxeles muy oscuros para obtener el color vibrante principal
-    brillo = arr.sum(axis=1)
-    vibrantes = arr[brillo > 90] if np.any(brillo > 90) else arr
-    r, g, b = vibrantes.mean(axis=0).astype(int)
+    c1_rgb = arr[:, :20].mean(axis=(0, 1)).astype(int)
+    c2_rgb = arr[:, 20:40].mean(axis=(0, 1)).astype(int)
+    c3_rgb = arr[:, 40:].mean(axis=(0, 1)).astype(int)
+
+    # Color dominante global
+    r, g, b = arr.mean(axis=(0, 1)).astype(int)
     hex_color = f"#{r:02x}{g:02x}{b:02x}"
+    brillo = int((0.299 * r + 0.587 * g + 0.114 * b))
+
+    # Determinar el género/escala musical según la colorimetría
+    if r > b and r > g:
+        vibe = "🔥 CALIDA / ENERGÉTICA (Escala Mayor Rápida)"
+        estilo_code = "WARM"
+    elif b > r and b > g:
+        vibe = "❄️ FRÍA / AMBIENTAL (Arpegio Profundo)"
+        estilo_code = "COLD"
+    else:
+        vibe = "🌿 NEÓN / SYNTHWAVE (Secuencia Electrónica)"
+        estilo_code = "NEON"
 
     col_img, col_info = st.columns([1.2, 1])
     with col_img:
-        st.image(img, caption="Portada cargada", use_container_width=True)
+        st.image(img_mostrar, caption=efecto_txt, use_container_width=True)
     with col_info:
+        # Mostrar paleta de 3 colores extraídos
+        p1, p2, p3 = [f"#{c[0]:02x}{c[1]:02x}{c[2]:02x}" for c in (c1_rgb, c2_rgb, c3_rgb)]
         st.markdown(f"""
-        <div style="background:{hex_color}; border:3px solid #ffffff; border-radius:15px; height:140px; box-shadow: 0 0 25px {hex_color}; margin-bottom:12px;"></div>
-        <p style="text-align:center; font-weight:bold;">RGB: ({r}, {g}, {b})<br>HEX: {hex_color.upper()}</p>
+        <div style="display:flex; height:70px; border-radius:12px; overflow:hidden; border:2px solid #fff; margin-bottom:10px;">
+            <div style="flex:1; background:{p1};"></div>
+            <div style="flex:1; background:{p2};"></div>
+            <div style="flex:1; background:{p3};"></div>
+        </div>
+        <p style="font-size:0.85rem; margin:4px 0;"><b>Vibe detectado:</b><br>{vibe}</p>
+        <p style="font-size:0.85rem; margin:4px 0;"><b>Luminosidad:</b> {brillo}/255</p>
         """, unsafe_allow_html=True)
 
-        if st.button("💡 PROYECTAR COLOR EN WOKWI"):
-            enviar_comando(f"RGB:{r},{g},{b}")
-            st.success(f"¡Color RGB({r}, {g}, {b}) enviado al anillo NeoPixel!")
+        if st.button("🎹 SINTETIZAR IMAGEN EN WOKWI"):
+            # Enviar paleta + estilo musical + brillo
+            comando = f"SYNTH:{c1_rgb[0]},{c1_rgb[1]},{c1_rgb[2]}|{c2_rgb[0]},{c2_rgb[1]},{c2_rgb[2]}|{estilo_code}|{brillo}"
+            enviar_comando(comando)
+            st.success("¡Melodía y paleta RGB proyectadas en la mesa DJ!")
 
 st.divider()
-st.subheader("🎨 Selector Manual de Escenario")
-color_hex = st.color_picker("O elige un color personalizado para la cabina", "#00f0ff")
+st.subheader("🎨 Selector Rápido de Escena")
+color_hex = st.color_picker("O elige un color sólido para los NeoPixels", "#00f0ff")
 
-if st.button("✨ APLICAR COLOR MANUAL A NEOPIXELS"):
+if st.button("✨ APLICAR COLOR MANUAL"):
     h = color_hex.lstrip("#")
     r, g, b = tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
     enviar_comando(f"RGB:{r},{g},{b}")
     st.success(f"¡LEDs actualizados a RGB({r}, {g}, {b})!")
 
 st.divider()
-if st.button("🔄 LEER EVENTOS DE LA MESA WOKWI"):
+if st.button("🔄 SINCRONIZAR CON MESA WOKWI"):
     sincronizar_telemetria()
     st.rerun()
 
-st.info(f"🎛️ **Estado de la mesa:** {st.session_state.ultimo_evento} | **Tempo:** {st.session_state.bpm_actual} BPM")
+st.info(f"🎛️ **Estado físico:** {st.session_state.ultimo_evento} | **Tempo:** {st.session_state.bpm_actual} BPM")
