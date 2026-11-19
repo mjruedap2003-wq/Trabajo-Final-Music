@@ -112,22 +112,24 @@ def aplicar_estilo_dj():
         box-shadow: 0 0 20px #00f0ff, 0 0 28px #ff007f;
     }
 
-    /* TEXTO NEGRO DENTRO DE CAJAS BLANCAS (File Uploader, Alertas y etiquetas code) */
-    [data-testid="stFileUploader"] section,
-    [data-testid="stFileUploader"] section *,
-    [data-testid="stFileUploader"] button,
-    [data-testid="stFileUploader"] button *,
-    [data-testid="stFileUploader"] small,
-    [data-testid="stFileUploader"] span,
-    [data-testid="stAlert"],
-    [data-testid="stAlert"] *,
-    [data-testid="stAlert"] code,
-    [data-testid="stAlert"] p code {
+    /* TEXTO NEGRO DENTRO DE CAJAS BLANCAS (Mayor especificidad sobre .stApp p) */
+    .stApp [data-testid="stFileUploader"] section,
+    .stApp [data-testid="stFileUploader"] section *,
+    .stApp [data-testid="stFileUploader"] button,
+    .stApp [data-testid="stFileUploader"] button *,
+    .stApp [data-testid="stFileUploader"] small,
+    .stApp [data-testid="stFileUploader"] span,
+    .stApp [data-testid="stAlert"],
+    .stApp [data-testid="stAlert"] p,
+    .stApp [data-testid="stAlert"] span,
+    .stApp [data-testid="stAlert"] div,
+    .stApp [data-testid="stAlert"] strong,
+    .stApp [data-testid="stAlert"] code {
         color: #070812 !important;
         font-weight: 700 !important;
     }
 
-    [data-testid="stAlert"] code {
+    .stApp [data-testid="stAlert"] code {
         background-color: rgba(7, 8, 18, 0.12) !important;
         padding: 2px 6px !important;
         border-radius: 4px !important;
