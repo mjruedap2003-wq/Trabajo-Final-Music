@@ -16,6 +16,15 @@ def aplicar_estilo_dj():
         font-family: 'Orbitron', sans-serif;
     }
 
+    header[data-testid="stHeader"] {
+        background-color: #070812 !important;
+    }
+
+    /* Textos generales y captions legibles */
+    .stApp p, .stApp label, [data-testid="stCaptionContainer"] p {
+        color: #e2e8f0 !important;
+    }
+
     [data-testid="stSidebar"] {
         background-color: #0b0d1f;
         border-right: 2px solid #ff007f;
@@ -65,6 +74,22 @@ def aplicar_estilo_dj():
         box-shadow: 0 0 15px rgba(0, 240, 255, 0.25);
         text-align: center;
     }
+
+    /* Etiquetas superiores de las tarjetas métricas (TEMPO, BASS DROPS, etc.) */
+    [data-testid="stMetricLabel"],
+    [data-testid="stMetricLabel"] label,
+    [data-testid="stMetricLabel"] p,
+    [data-testid="stMetricLabel"] div {
+        font-family: 'Orbitron', sans-serif !important;
+        color: #a5f3fc !important;
+        font-weight: 700 !important;
+        font-size: 0.85rem !important;
+        letter-spacing: 1px !important;
+        opacity: 1 !important;
+        justify-content: center !important;
+        text-shadow: 0 0 6px rgba(0, 240, 255, 0.45);
+    }
+
     [data-testid="stMetricValue"] {
         font-family: 'Press Start 2P', cursive !important;
         color: #39ff14 !important;
