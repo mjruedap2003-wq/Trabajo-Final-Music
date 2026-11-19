@@ -20,7 +20,7 @@ def aplicar_estilo_dj():
         background-color: #070812 !important;
     }
 
-    /* Textos generales y captions legibles */
+    /* Textos generales y captions legibles sobre fondo oscuro */
     .stApp p, .stApp label, [data-testid="stCaptionContainer"] p {
         color: #e2e8f0 !important;
     }
@@ -75,7 +75,7 @@ def aplicar_estilo_dj():
         text-align: center;
     }
 
-    /* Etiquetas superiores de las tarjetas métricas (TEMPO, BASS DROPS, etc.) */
+    /* Etiquetas superiores de las tarjetas métricas */
     [data-testid="stMetricLabel"],
     [data-testid="stMetricLabel"] label,
     [data-testid="stMetricLabel"] p,
@@ -110,6 +110,18 @@ def aplicar_estilo_dj():
     }
     .stButton > button:hover {
         box-shadow: 0 0 20px #00f0ff, 0 0 28px #ff007f;
+    }
+
+    /* TEXTO NEGRO DENTRO DE CAJAS BLANCAS (File Uploader y Alertas) */
+    [data-testid="stFileUploader"] section,
+    [data-testid="stFileUploader"] section *,
+    [data-testid="stFileUploader"] button,
+    [data-testid="stFileUploader"] button *,
+    [data-testid="stFileUploader"] small,
+    [data-testid="stFileUploader"] span,
+    [data-testid="stAlert"],
+    [data-testid="stAlert"] * {
+        color: #070812 !important;
     }
 
     .dj-banner {
