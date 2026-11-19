@@ -136,4 +136,18 @@ st.subheader("2. Pad de Disparo Rápido")
 
 c1, c2, c3, c4 = st.columns(4)
 if c1.button("🎉 FIESTA", use_container_width=True):
-    enviar_comando("
+    enviar_comando("MODE:FIESTA")
+if c2.button("🌊 CHILL", use_container_width=True):
+    enviar_comando("MODE:CHILL")
+if c3.button("🚨 ALARMA", use_container_width=True):
+    enviar_comando("MODE:ALARMA")
+if c4.button("🔇 STOP", use_container_width=True):
+    enviar_comando("MODE:STOP")
+
+if st.button("🔄 SINCRONIZAR DATOS DE WOKWI", use_container_width=True):
+    sincronizar_telemetria()
+    st.rerun()
+
+if st.session_state.setlist_voz:
+    with st.expander("📋 Historial de Comandos Vocales", expanded=True):
+        st.dataframe(st.session_state.setlist_voz, use_container_width=True, hide_index=True)
