@@ -15,18 +15,20 @@ sincronizar_telemetria()
 
 if "setlist_voz" not in st.session_state:
     st.session_state.setlist_voz = []
+if "ultima_onda_voz" not in st.session_state:
+    st.session_state.ultima_onda_voz = None
 if "metricas_voz" not in st.session_state:
     st.session_state.metricas_voz = {"energia": 0, "pitch": 0}
 
 def analizar_acustica_wav(wav_bytes):
-    """Extrae energía RMS (0-100%) y frecuencia dominante (Hz) de la voz."""
+    """Extrae energía RMS (0-100%), frecuencia dominante (Hz) y forma de onda vocal."""
     with wave.open(io.BytesIO(wav_bytes), "rb") as wf:
         framerate = wf.getframerate()
         frames = wf.readframes(wf.getnframes())
         audio_np = np.frombuffer(frames, dtype=np.int16).astype(np.float32)
 
     if len(audio_np) == 0:
-        return 0, 0
+        return 0, 0, np.zeros(60)
 
     norm = audio_np / 32768.0
     rms = np.sqrt(np.mean(norm**2))
@@ -37,7 +39,10 @@ def analizar_acustica_wav(wav_bytes):
     mask = (freqs >= 85) & (freqs <= 600)
     pitch_hz = int(freqs[mask][np.argmax(fft_vals[mask])]) if np.any(mask) else 220
 
-    return energia_pct, pitch_hz
+    # Extrae 80 puntos de amplitud para mostrar tanto los picos altos como los niveles bajitos
+    paso = max(1, len(norm) // 80)
+    onda_vis = np.abs(norm[::paso][:80])
+    return energia_pct, pitch_hz, onda_vis
 
 def responder_con_voz(frase):
     """Genera respuesta hablada de confirmación en la interfaz."""
@@ -75,8 +80,9 @@ audio = mic_recorder(
 )
 
 if audio is not None:
-    energia, pitch = analizar_acustica_wav(audio["bytes"])
+    energia, pitch, onda_voz = analizar_acustica_wav(audio["bytes"])
     st.session_state.metricas_voz = {"energia": energia, "pitch": pitch}
+    st.session_state.ultima_onda_voz = onda_voz
 
     if modo_vocoder and pitch > 0:
         enviar_comando(f"TONE:{pitch}")
@@ -116,6 +122,9 @@ if audio is not None:
                 respuesta_tts = "Silencio."
                 st.info("🔇 Actuadores detenidos en Wokwi.")
 
+            if energia >= 80 and comando_enviado:
+                st.toast("🔥 ¡Pico alto de voz detectado!", icon="🔥")
+
             if comando_enviado:
                 enviar_comando(comando_enviado)
                 st.session_state.setlist_voz.insert(0, {
@@ -130,6 +139,11 @@ if audio is not None:
         except Exception:
             if not modo_vocoder:
                 st.error("No se captó voz clara. Intenta hablar más cerca del micrófono.")
+
+# Gráfica rojiza/magenta de los picos y niveles bajos de tu voz
+if st.session_state.ultima_onda_voz is not None:
+    st.caption("📈 Nivel de Voz en Tiempo Real (Picos altos y niveles bajos):")
+    st.area_chart(st.session_state.ultima_onda_voz, color="#ff0055", height=150)
 
 st.divider()
 st.subheader("2. Pad de Disparo Rápido")
