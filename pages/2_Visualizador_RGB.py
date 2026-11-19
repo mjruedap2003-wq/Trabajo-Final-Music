@@ -8,6 +8,10 @@ st.set_page_config(page_title="Visualizador RGB", page_icon="🖼️", layout="c
 aplicar_estilo_dj()
 sincronizar_telemetria()
 
+# Guarda el último Bass Drop que ya disparó un efecto visual
+if "ultimo_drop_visual" not in st.session_state:
+    st.session_state.ultimo_drop_visual = st.session_state.drops_count
+
 banner_dj("AMBIENTE 2 • IMAGE-TO-SYNTH & PIXEL MAPPING")
 st.title("VISUALIZADOR RGB")
 
@@ -18,10 +22,12 @@ archivo = st.file_uploader("📂 Sube una imagen o portada (PNG, JPG, JPEG)", ty
 if archivo is not None:
     img = Image.open(archivo).convert("RGB")
     
-    # Si se disparó un Bass Drop en Wokwi, aplicar efecto visual "Invert/Solarize" en la web
-    if st.session_state.drops_count % 2 == 1:
+    # Solo aplica el efecto UNA VEZ si llegó un Bass Drop nuevo desde Wokwi
+    if st.session_state.drops_count > st.session_state.ultimo_drop_visual:
         img_mostrar = ImageOps.solarize(img, threshold=128)
-        efecto_txt = "⚡ REMIX VISUAL ACTIVO (Por Bass Drop en Wokwi)"
+        efecto_txt = "⚡ REMIX VISUAL MOMENTÁNEO (Bass Drop recibido)"
+        # Actualiza el registro para que en la siguiente interacción vuelva a la original
+        st.session_state.ultimo_drop_visual = st.session_state.drops_count
     else:
         img_mostrar = img
         efecto_txt = "🎨 MODO ORIGINAL"
@@ -67,7 +73,6 @@ if archivo is not None:
         """, unsafe_allow_html=True)
 
         if st.button("🎹 SINTETIZAR IMAGEN EN WOKWI"):
-            # Enviar paleta + estilo musical + brillo
             comando = f"SYNTH:{c1_rgb[0]},{c1_rgb[1]},{c1_rgb[2]}|{c2_rgb[0]},{c2_rgb[1]},{c2_rgb[2]}|{estilo_code}|{brillo}"
             enviar_comando(comando)
             st.success("¡Melodía y paleta RGB proyectadas en la mesa DJ!")
